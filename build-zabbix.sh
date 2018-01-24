@@ -44,11 +44,48 @@ function build_zabbix_server() {
 		tar xf zabbix-3.4.4.tar.gz
 	fi
 	pushd zabbix-3.4.4
-	./configure --prefix=/usr/local/zabbix-server --enable-server --with-mysql --with-net-snmp --with-libcurl --with-libxml2 --enable-agent --enable-ipv6
+	./configure --prefix=/usr/local/zabbix-server \
+		--enable-server \
+		--with-mysql \
+		--with-net-snmp \
+		--with-libcurl \
+		--with-libxml2 \
+		--enable-agent \
+		--enable-ipv6
 	make && make install
 	popd
 }
 
+function zabbix_agent_installed() {
+	[ -f /usr/local/zabbix-agent/sbin/zabbix_agentd ]
+}
+
+function build_zabbix_agent() {
+	if zabbix_agent_installed; then
+		echo "zabbix already installed"
+		return
+	fi
+
+	if [ ! -d zabbix-3.4.4 ]; then
+		if [ ! -f zabbix-3.4.4.tar.gz ]; then
+			wget http://sourceforge.net/projects/zabbix/files/ZABBIX%20Latest%20Stable/3.4.4/zabbix-3.4.4.tar.gz
+		fi
+		tar xf zabbix-3.4.4.tar.gz
+	fi
+
+	pushd zabbix-3.4.4
+	./configure --prefix=/usr/local/zabbix-agent \
+		--enable-agent
+	make && make install
+	popd
+}
+
+uid=`id -u`
+if (( uid )); then
+	echo "not root user"
+	exit
+fi
+
 install_dependency
 add_zabbix_user
-build_zabbix_server
+build_zabbix_agent
